@@ -5,7 +5,6 @@ use std::f32::consts::PI;
 
 mod framebuffer;
 mod triangle;
-mod line;
 mod vertex;
 mod obj;
 mod color;
@@ -17,7 +16,7 @@ use framebuffer::Framebuffer;
 use vertex::Vertex;
 use obj::Obj;
 use triangle::triangle;
-use shaders::vertex_shader;
+use shaders::{vertex_shader, fragment_shader};
 use camera::Camera;
 
 pub struct Uniforms {
@@ -114,7 +113,8 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
         let x = fragment.position.x as usize;
         let y = fragment.position.y as usize;
         if x < framebuffer.width && y < framebuffer.height {
-            let color = fragment.color.to_hex();
+            let shaded_color = fragment_shader(&fragment, &uniforms);
+            let color = shaded_color.to_hex();
             framebuffer.set_current_color(color);
             framebuffer.point(x , y, fragment.depth);
         }
