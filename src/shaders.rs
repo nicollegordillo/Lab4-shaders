@@ -175,21 +175,19 @@ pub fn fragment_shader_earth(fragment: &Fragment, uniforms: &Uniforms) -> Color 
     let land_color = Color::new(34.0, 139.0, 34.0); // Greenish land color
     let sea_color = Color::new(0.0, 105.0, 148.0);   // Blue sea color
 
-    // Generate simple noise or pattern for land vs sea (optional)
-    let distance_from_center = (fragment.vertex_position.x * fragment.vertex_position.x +
-                                fragment.vertex_position.y * fragment.vertex_position.y).sqrt();
-    let earth_radius = 1.0;
+    // Generate a blotchy pattern for land and sea
+    let blotch_size = 8.0; // Size of the blotches
+    let noise_scale = 5.0; // Adjust this value for more or less detail in the noise
 
-    // Use the distance to distinguish between sea and land
-    let base_color = if distance_from_center < earth_radius {
-        // Example of a simple pattern
-        if fragment.vertex_position.x.sin() * fragment.vertex_position.y.cos() > 0.0 {
-            land_color
-        } else {
-            sea_color
-        }
+    // Calculate noise values for a blotchy effect
+    let noise_value = ((fragment.vertex_position.x * noise_scale).sin() +
+                       (fragment.vertex_position.y * noise_scale).cos()).abs();
+
+    // Distinguish between sea and land using the noise pattern
+    let base_color = if noise_value > 0.5 {
+        land_color // Use land color for higher noise values
     } else {
-        Color::black()
+        sea_color // Use sea color for lower noise values
     };
 
     // Add moving clouds (white) overlay based on time
@@ -198,14 +196,9 @@ pub fn fragment_shader_earth(fragment: &Fragment, uniforms: &Uniforms) -> Color 
     let cloud_pattern = ((fragment.vertex_position.x * 10.0 + uniforms.time as f32 * cloud_speed).sin() *
                          (fragment.vertex_position.y * 10.0 + uniforms.time as f32 * cloud_speed).cos()).abs();
 
-    // Blend clouds on top of the base color
-    let final_color = if cloud_pattern > 0.7 {
-        cloud_color.blend_overlay(&base_color) // Blend clouds with land/sea
-    } else {
-        base_color
-    };
+    
 
-    final_color * fragment.intensity
+   base_color * fragment.intensity
 }
 
 
