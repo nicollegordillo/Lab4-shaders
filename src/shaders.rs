@@ -196,10 +196,16 @@ pub fn fragment_shader_earth(fragment: &Fragment, uniforms: &Uniforms) -> Color 
     let cloud_pattern = ((fragment.vertex_position.x * 10.0 + uniforms.time as f32 * cloud_speed).sin() *
                          (fragment.vertex_position.y * 10.0 + uniforms.time as f32 * cloud_speed).cos()).abs();
 
-    
+    // Blend clouds on top of the base color
+    let final_color = if cloud_pattern > 0.7 {
+        cloud_color// Blend clouds with land/sea
+    } else {
+        base_color
+    };
 
-   base_color * fragment.intensity
+    final_color * fragment.intensity
 }
+
 
 
 
