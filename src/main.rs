@@ -16,7 +16,7 @@ use framebuffer::Framebuffer;
 use vertex::Vertex;
 use obj::Obj;
 use triangle::triangle;
-use shaders::{vertex_shader, fragment_shader, fragment_shader_urano, fragment_shader_saturn, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth};
+use shaders::{vertex_shader, fragment_shader, fragment_shader_urano, fragment_shader_saturn, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth, fragment_shader_mercury};
 use camera::Camera;
 
 pub struct Uniforms {
@@ -122,6 +122,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
                 4 => fragment_shader_venus(&fragment, uniforms),
                 5 => fragment_shader_mars(&fragment, uniforms),
                 6 => fragment_shader_earth(&fragment, uniforms),
+                7 => fragment_shader_mercury(&fragment, uniforms),
                 _ => fragment_shader_neptune(&fragment, uniforms),
             };
             let color = shaded_color.to_hex();
@@ -184,6 +185,7 @@ fn main() {
         if window.is_key_down(Key::NumPad4) { shader_type = 4; } 
         if window.is_key_down(Key::NumPad5) { shader_type = 5; } 
         if window.is_key_down(Key::NumPad6) { shader_type = 6; }
+        if window.is_key_down(Key::NumPad7) { shader_type = 7; }
         if window.is_key_down(Key::NumPad0) { shader_type = 0; }
 
         framebuffer.clear();

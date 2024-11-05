@@ -206,6 +206,43 @@ pub fn fragment_shader_earth(fragment: &Fragment, uniforms: &Uniforms) -> Color 
     final_color * fragment.intensity
 }
 
+pub fn fragment_shader_mercury(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
+    // Base color for Mercury's surface (dark gray)
+    let mercury_base_color = Color::new(169.0, 169.0, 169.0); // Dark gray
+
+    // Color for the craters (lighter gray)
+    let crater_color = Color::new(200.0, 200.0, 200.0); // Lighter gray for craters
+
+    // Parameters to control the crater pattern
+    let crater_size = 0.1;  // Size of the craters
+    let crater_freq = 3.0;  // Frequency of craters (lower means larger, fewer craters)
+    let randomness_factor = 0.6; // Control randomness level of craters
+    let noise_scale = 10.0; // Scaling factor for noise
+
+    // Combine multiple sine waves to simulate irregular patterns for craters
+    let noise1 = (fragment.vertex_position.x * crater_freq).sin();
+    let noise2 = (fragment.vertex_position.y * crater_freq).cos();
+    
+    // Random factor based on position for a more irregular pattern
+    let random_factor = (fragment.vertex_position.x * noise_scale).sin() * (fragment.vertex_position.y * noise_scale).cos();
+
+    // Combined crater pattern with randomness
+    let crater_pattern = (noise1 + noise2 + random_factor).abs();
+
+    // Threshold for determining if a crater exists
+    let final_color = if crater_pattern > randomness_factor {
+        crater_color // Crater color
+    } else {
+        mercury_base_color // Base color for surface
+    };
+
+    // Apply fragment intensity for lighting effects
+    final_color * fragment.intensity
+}
+
+
+
+
 
 
 
