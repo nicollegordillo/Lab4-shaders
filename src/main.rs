@@ -16,7 +16,7 @@ use framebuffer::Framebuffer;
 use vertex::Vertex;
 use obj::Obj;
 use triangle::triangle;
-use shaders::{vertex_shader, fragment_shader};
+use shaders::{vertex_shader, fragment_shader, fragment_shader_urano, fragment_shader_saturn, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth};
 use camera::Camera;
 
 pub struct Uniforms {
@@ -24,6 +24,7 @@ pub struct Uniforms {
     view_matrix: Mat4,
     projection_matrix: Mat4,
     viewport_matrix: Mat4,
+    time: u32,
 }
 
 fn create_model_matrix(translation: Vec3, scale: f32, rotation: Vec3) -> Mat4 {
@@ -86,7 +87,7 @@ fn create_viewport_matrix(width: f32, height: f32) -> Mat4 {
     )
 }
 
-fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]){
+fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], shader_type: u8){
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
         let transformed = vertex_shader(vertex, uniforms);
@@ -113,7 +114,16 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
         let x = fragment.position.x as usize;
         let y = fragment.position.y as usize;
         if x < framebuffer.width && y < framebuffer.height {
-            let shaded_color = fragment_shader(&fragment, &uniforms);
+            //let shaded_color = fragment_shader_saturn_with_ring(&fragment, &uniforms);
+            let shaded_color = match shader_type {
+                1 => fragment_shader_jupiter(&fragment, uniforms),
+                2 => fragment_shader_saturn_with_ring(&fragment, uniforms),
+                3 => fragment_shader_urano(&fragment, uniforms),
+                4 => fragment_shader_venus(&fragment, uniforms),
+                5 => fragment_shader_mars(&fragment, uniforms),
+                6 => fragment_shader_earth(&fragment, uniforms),
+                _ => fragment_shader_neptune(&fragment, uniforms),
+            };
             let color = shaded_color.to_hex();
             framebuffer.set_current_color(color);
             framebuffer.point(x , y, fragment.depth);
@@ -154,6 +164,8 @@ fn main() {
 
     let obj = Obj::load("./sphere.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array();
+    let mut time = 0;
+    let mut shader_type = 0;
 
     let projection_matrix = create_perspective_matrix(window_width as f32, window_height as f32);
     let viewport_matrix = create_viewport_matrix(framebuffer_width as f32, framebuffer_height as f32);
@@ -162,8 +174,17 @@ fn main() {
         if window.is_key_down(Key::Escape) {
             break;
         }
-
+        
+        time += 1;
         //handle_input(&window, &mut translation, &mut rotation, &mut scale);
+
+        if window.is_key_down(Key::NumPad1) { shader_type = 1; } 
+        if window.is_key_down(Key::NumPad2) { shader_type = 2; } 
+        if window.is_key_down(Key::NumPad3) { shader_type = 3; } 
+        if window.is_key_down(Key::NumPad4) { shader_type = 4; } 
+        if window.is_key_down(Key::NumPad5) { shader_type = 5; } 
+        if window.is_key_down(Key::NumPad6) { shader_type = 6; }
+        if window.is_key_down(Key::NumPad0) { shader_type = 0; }
 
         framebuffer.clear();
 
@@ -171,10 +192,16 @@ fn main() {
 
         let model_matrix = create_model_matrix(translation, scale, rotation);
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
-        let uniforms= Uniforms { model_matrix, view_matrix, projection_matrix, viewport_matrix };
+        let uniforms= Uniforms { 
+            model_matrix, 
+            view_matrix, 
+            projection_matrix, 
+            viewport_matrix,
+            time,
+        };
 
         framebuffer.set_current_color(0xFFDDDD);
-        render(&mut framebuffer, &uniforms, &vertex_arrays);
+        render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type);
 
         window
             .update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height)
@@ -183,45 +210,7 @@ fn main() {
         std::thread::sleep(frame_delay);
     }
 }
-/*
-fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, scale: &mut f32) {
-  if window.is_key_down(Key::Right) {
-    translation.x += 10.0;
-  }
-  if window.is_key_down(Key::Left) {
-    translation.x -= 10.0;
-  }
-  if window.is_key_down(Key::Up) {
-    translation.y -= 10.0;
-  }
-  if window.is_key_down(Key::Down) {
-    translation.y += 10.0;
-  }
-  if window.is_key_down(Key::I) {
-    *scale += 2.0;
-  }
-  if window.is_key_down(Key::O) {
-    *scale -= 2.0;
-  }
-  if window.is_key_down(Key::D) {
-        rotation.x -= PI / 10.0;
-    }
-    if window.is_key_down(Key::A) {
-        rotation.x += PI / 10.0;
-    }
-    if window.is_key_down(Key::S) {
-        rotation.y -= PI / 10.0;
-    }
-    if window.is_key_down(Key::W) {
-        rotation.y += PI / 10.0;
-    }
-    if window.is_key_down(Key::Q) {
-        rotation.z -= PI / 10.0;
-    }
-    if window.is_key_down(Key::E) {
-        rotation.z += PI / 10.0;
-    }
-}*/
+
 fn handle_input(window: &Window, camera: &mut Camera){
     let movement_speed= 1.0;
     let rotation_speed = PI/50.0;
