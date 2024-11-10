@@ -16,7 +16,7 @@ use framebuffer::Framebuffer;
 use vertex::Vertex;
 use obj::Obj;
 use triangle::triangle;
-use shaders::{vertex_shader, fragment_shader_urano, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth, fragment_shader_mercury, fragment_shader_sun, fragment_shader_moon};
+use shaders::{vertex_shader, fragment_shader_urano, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth, fragment_shader_mercury, fragment_shader_sun, fragment_shader_moon, fragment_shader_ring};
 use camera::Camera;
 
 pub struct Uniforms {
@@ -125,6 +125,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
                 7 => fragment_shader_mercury(&fragment, uniforms),
                 8 => fragment_shader_sun(&fragment, uniforms),
                 9 => fragment_shader_moon(&fragment, uniforms),
+                9 => fragment_shader_ring(&fragment, uniforms),
                 _ => fragment_shader_neptune(&fragment, uniforms),
             };
             let color = shaded_color.to_hex();
@@ -171,6 +172,8 @@ fn main() {
     let moon_obj = Obj::load("./moon.obj").expect("Failed to load moon.obj");
     let moon_vertex_array = moon_obj.get_vertex_array();
 
+    let ring_obj = Obj::load("./ring.obj").expect("Failed to load ring.obj");
+    let ring_vertex_array = ring_obj.get_vertex_array();
 
     let mut time = 0;
     let mut shader_type = 0;
@@ -211,8 +214,27 @@ fn main() {
 
         framebuffer.set_current_color(0xFFDDDD);
         //render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type);
+        if shader_type == 2 {
+            // Render Saturn
+            render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type);
 
-        if shader_type == 6 {
+            // Adjust ring's transformation matrix
+            let ring_translation = Vec3::new(0.0, 0.0, 0.0); // Centered on Saturn
+            let ring_scale = 0.6; // Adjust scale to fit around Saturn
+            let ring_rotation = Vec3::new(0.0, rotation.y, 0.0); // Rotate with Saturn
+            let ring_model_matrix = create_model_matrix(ring_translation, ring_scale, ring_rotation);
+
+            let ring_uniforms = Uniforms {
+                model_matrix: ring_model_matrix,
+                view_matrix,
+                projection_matrix,
+                viewport_matrix,
+                time,
+            };
+
+            render(&mut framebuffer, &ring_uniforms, &ring_vertex_array, 10); // Use shader 10 for the ring
+
+        } else if shader_type == 6 {
             render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type); // Render Earth
             // Calculate moon's orbital angle based on time for circular motion
             let orbit_radius = 1.0;
