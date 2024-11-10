@@ -16,7 +16,7 @@ use framebuffer::Framebuffer;
 use vertex::Vertex;
 use obj::Obj;
 use triangle::triangle;
-use shaders::{vertex_shader, fragment_shader, fragment_shader_urano, fragment_shader_saturn, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth, fragment_shader_mercury};
+use shaders::{vertex_shader, fragment_shader_urano, fragment_shader_neptune, fragment_shader_jupiter, fragment_shader_saturn_with_ring, fragment_shader_venus, fragment_shader_mars, fragment_shader_earth, fragment_shader_mercury, fragment_shader_sun, fragment_shader_moon};
 use camera::Camera;
 
 pub struct Uniforms {
@@ -123,6 +123,8 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
                 5 => fragment_shader_mars(&fragment, uniforms),
                 6 => fragment_shader_earth(&fragment, uniforms),
                 7 => fragment_shader_mercury(&fragment, uniforms),
+                8 => fragment_shader_sun(&fragment, uniforms),
+                9 => fragment_shader_moon(&fragment, uniforms),
                 _ => fragment_shader_neptune(&fragment, uniforms),
             };
             let color = shaded_color.to_hex();
@@ -133,9 +135,9 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
 }
 
 fn main() {
-    let window_width = 800;
+    let window_width = 600;
     let window_height = 600;
-    let framebuffer_width = 800;
+    let framebuffer_width = 600;
     let framebuffer_height = 600;
     let frame_delay = Duration::from_millis(16);
 
@@ -148,7 +150,7 @@ fn main() {
     )
     .unwrap();
 
-    window.set_position(500,500);
+    window.set_position(0,0);
     window.update();
 
     framebuffer.set_background_color(0x333355);
@@ -165,6 +167,11 @@ fn main() {
 
     let obj = Obj::load("./sphere.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array();
+
+    let moon_obj = Obj::load("./moon.obj").expect("Failed to load moon.obj");
+    let moon_vertex_array = moon_obj.get_vertex_array();
+
+
     let mut time = 0;
     let mut shader_type = 0;
 
@@ -177,7 +184,6 @@ fn main() {
         }
         
         time += 1;
-        //handle_input(&window, &mut translation, &mut rotation, &mut scale);
 
         if window.is_key_down(Key::NumPad1) { shader_type = 1; } 
         if window.is_key_down(Key::NumPad2) { shader_type = 2; } 
@@ -186,6 +192,7 @@ fn main() {
         if window.is_key_down(Key::NumPad5) { shader_type = 5; } 
         if window.is_key_down(Key::NumPad6) { shader_type = 6; }
         if window.is_key_down(Key::NumPad7) { shader_type = 7; }
+        if window.is_key_down(Key::NumPad8) { shader_type = 8; }
         if window.is_key_down(Key::NumPad0) { shader_type = 0; }
 
         framebuffer.clear();
@@ -203,7 +210,30 @@ fn main() {
         };
 
         framebuffer.set_current_color(0xFFDDDD);
-        render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type);
+        //render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type);
+
+        if shader_type == 6 {
+            render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type); // Render Earth
+            // Calculate moon's orbital angle based on time for circular motion
+            let orbit_radius = 1.0;
+            let angle = (uniforms.time as f32) * 0.05;//djust speed by modifying the multiplier
+
+            // Position the moon in orbit around Earth
+            let moon_translation = Vec3::new(orbit_radius * angle.cos(), 0.0, orbit_radius * angle.sin());
+            let moon_rotation = Vec3::new(0.0, angle, 0.0); // Rotate the moon to face outward in orbit
+            let moon_model_matrix = create_model_matrix(moon_translation, 0.3, moon_rotation);
+
+            let moon_uniforms = Uniforms {
+                model_matrix: moon_model_matrix,
+                view_matrix,
+                projection_matrix,
+                viewport_matrix,
+                time,
+            };
+            render(&mut framebuffer, &moon_uniforms, &vertex_arrays, 9); // Render Moon with shader 9 (example)
+        } else {
+            render(&mut framebuffer, &uniforms, &vertex_arrays, shader_type);
+        }
 
         window
             .update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height)

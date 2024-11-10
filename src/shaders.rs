@@ -3,6 +3,7 @@ use crate::vertex::Vertex;
 use crate::Uniforms;
 use crate::color::Color;
 use crate::fragment::Fragment;
+use std::f32::consts::PI;
 
 pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 	let position = Vec4::new(
@@ -38,58 +39,36 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 	}
 }
 
-pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    // Colors for the sun's core and its glow
-    let sun_core_color = Color::new(255.0, 204.0, 0.0); // Bright yellow core
-    let glow_color = Color::new(255.0, 100.0, 0.0);     // Red-orange glow
-
-    // Adjust the core and glow radii to increase the sun's visible area
-    let core_radius = 0.3;   // Adjust this to make the core larger
-    let glow_radius = 1.0;   // Adjust this for a wider glow
-
-    // Calculate the distance from the center (assuming the sun is at 0.5, 0.5)
-    let center_x = 0.0;
-    let center_y = 0.0;
-    let dist_x = fragment.vertex_position.x - center_x;
-    let dist_y = fragment.vertex_position.y - center_y;
-    let distance = (dist_x * dist_x + dist_y * dist_y).sqrt();
-
-    // Choose color based on distance
-    let base_color = if distance < core_radius {
-        sun_core_color
-    } else if distance < glow_radius {
-        // Apply the blend effect for the glowing part
-        sun_core_color.blend_color_burn(&glow_color)
-    } else {
-        Color::black() // Background color outside the glow radius
-    };
-
-    // Apply intensity to the final color
-    base_color * fragment.intensity
-}
-
 pub fn fragment_shader_urano(fragment: &Fragment, uniforms: &Uniforms) -> Color {
    let color = Color::new(189.0, 219.0, 208.0); 
    color * fragment.intensity
 }
 
-// Saturn Shader
-pub fn fragment_shader_saturn(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    let inner_color = Color::new(210.0, 180.0, 140.0); // Light tan for the core
-    let outer_color = Color::new(245.0, 230.0, 210.0); // Pale yellow for the outer edges
+pub fn fragment_shader_sun(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Define the colors
+    let white = Color::new(255.0, 255.0, 255.0);  // White center
+    let yellow = Color::new(255.0, 255.0, 0.0);  // Yellow outline
 
-    // Calculate distance from the center
-    let center_x = 0.0;
-    let center_y = 0.0;
-    let dist_x = fragment.vertex_position.x - center_x;
-    let dist_y = fragment.vertex_position.y - center_y;
-    let distance = (dist_x * dist_x + dist_y * dist_y).sqrt();
+    // Define the radius of the sun (the size of the sun's edge)
+    let sun_radius = 0.8;  // You can adjust this as needed
 
-    // Lerp based on distance
-    let blended_color = inner_color.lerp(&outer_color, distance.min(1.0));
-    blended_color * fragment.intensity
+    // Calculate distance from the center of the sun in the X-Y plane (ignore Z)
+    let distance_from_center = (fragment.vertex_position.x.powi(2) + fragment.vertex_position.y.powi(2)).sqrt();
+
+    // Ensure that the distance from the center is within the sun's radius
+    let t = distance_from_center / sun_radius;
+
+    // Lerp between white (center) and yellow (outline) based on the distance
+    let color = if t < 1.0 {
+        // Interpolate between white and yellow based on distance
+        white.lerp(&yellow, t)
+    } else {
+        yellow  // Beyond the sun radius, we just use yellow
+    };
+
+    // Return the interpolated color
+    color
 }
-
 // Jupiter Shader
 pub fn fragment_shader_jupiter(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     let inner_color = Color::new(255.0, 178.0, 102.0); // Light orange-brown
@@ -125,40 +104,43 @@ pub fn fragment_shader_neptune(fragment: &Fragment, uniforms: &Uniforms) -> Colo
     blended_color * fragment.intensity
 }
 
+// fragment_shader_saturn_with_ring function
 pub fn fragment_shader_saturn_with_ring(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    let inner_color = Color::new(210.0, 180.0, 140.0); // Light tan for Saturn's core
-    let outer_color = Color::new(245.0, 230.0, 210.0); // Pale yellow for the outer edges
-    let ring_color = Color::new(220.0, 220.0, 220.0); // Gray for the ring
+    // Base color for Saturn
+    let saturn_color = Color::new(210.0, 180.0, 140.0); 
+    // Ring color (make it bright to distinguish)
+    let ring_color = Color::new(255.0, 255.0, 255.0); 
 
-    // Calculate distance from the center
-    let center_x = 0.0;
-    let center_y = 0.0;
-    let dist_x = fragment.vertex_position.x - center_x;
-    let dist_y = fragment.vertex_position.y - center_y;
-    let distance = (dist_x * dist_x + dist_y * dist_y).sqrt();
+    // Define ring parameters
+    let ring_inner_radius = 0.48;  // Inner radius of the ring
+    let ring_outer_radius = 0.50; // Outer radius of the ring
+    let ring_z_offset = 0.55;     // Z offset for the flat ring (make sure this is small)
 
-    // Define radii for Saturn's core, outer edge, and ring
-    let core_radius = 0.8;       // Adjusted for larger scale
-    let outer_radius = 1.4;
-    let ring_inner_radius = 2.5;
-    let ring_outer_radius = 3.0;
+    // Calculate distance from the center in the X-Y plane (ignore Z)
+    let distance_from_center = (fragment.vertex_position.x.powi(2) + fragment.vertex_position.z.powi(2)).sqrt();
 
-    // Determine color based on distance
-    let base_color = if distance < core_radius {
-        inner_color
-    } else if distance < outer_radius {
-        // Blend between inner and outer color within Saturn's main body
-        inner_color.lerp(&outer_color, (distance - core_radius) / (outer_radius - core_radius))
-    } else if distance >= ring_inner_radius && distance <= ring_outer_radius {
-        // Ring effect: Make it partially transparent for a faint look
-        ring_color * 0.8
-    } else {
-        Color::black() // Background color outside the planet and ring
-    };
+    // Check if we are in the ring's radius range
+    if distance_from_center >= ring_inner_radius && distance_from_center <= ring_outer_radius {
+        // Calculate the LERP factor based on the distance
+        let lerp_factor = (distance_from_center - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);
 
-    // Apply intensity to the final color
-    base_color * fragment.intensity
+        // Interpolate between Saturn color and ring color using the lerp factor
+        let ring_color_lerp = saturn_color.lerp(&ring_color, lerp_factor);
+
+        // Return the interpolated color with fragment intensity
+        return ring_color_lerp * fragment.intensity;
+    }
+
+    // Return base Saturn color for other parts of the planet
+    saturn_color * fragment.intensity
 }
+
+fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
+    let t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0); // Clamp x between edge0 and edge1
+    t * t * (3.0 - 2.0 * t) // Smooth interpolation
+}
+
+
 
 pub fn fragment_shader_mars(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
     let mars_color = Color::new(210.0, 80.0, 0.0); // Rusty red-orange color for Mars
@@ -240,6 +222,17 @@ pub fn fragment_shader_mercury(fragment: &Fragment, _uniforms: &Uniforms) -> Col
     final_color * fragment.intensity
 }
 
+pub fn fragment_shader_moon(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let base_color = Color::new(200.0, 200.0, 200.0); // Gray base color for the moon
+    let crater_color = Color::new(100.0, 100.0, 100.0); // Darker gray for craters
+
+    // Simple crater effect based on fragment position
+    let crater_intensity = ((fragment.vertex_position.x * 10.0).sin() * 
+                            (fragment.vertex_position.y * 10.0).sin()).abs();
+    
+    // Blend colors based on intensity
+    base_color.lerp(&crater_color, crater_intensity)
+}
 
 
 

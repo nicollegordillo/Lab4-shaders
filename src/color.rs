@@ -63,6 +63,11 @@ impl Color {
         )
     }
 
+    pub fn mix(a: Color, b: Color, t: f32) -> Color {
+        a * (1.0 - t) + b * t // Linear interpolation
+    }
+
+
     pub fn blend_color_dodge(&self, blend: &Color) -> Color {
         fn dodge_channel(base: f32, blend: f32) -> f32 {
             if blend >= 255.0 {
