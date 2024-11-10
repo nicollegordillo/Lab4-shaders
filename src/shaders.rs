@@ -270,34 +270,22 @@ pub fn fragment_shader_moon(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     base_color.lerp(&crater_color, crater_intensity)
 }
 
-pub fn fragment_shader_ring(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    // Base color for Saturn's ring
-    let ring_color = Color::new(255.0, 255.0, 255.0); // White for the ring's primary color
+pub fn fragment_shader_ring(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
+    // Base color for the ring (you can change this to match the color of Saturn's rings)
+    let ring_base_color = Color::new(200.0, 200.0, 200.0); // A light gray color, adjust as needed
 
-    // Define ring parameters
-    let ring_inner_radius = 0.48;  // Inner radius of the ring
-    let ring_outer_radius = 0.50;  // Outer radius of the ring
-    let ring_z_offset = 0.55;      // Z offset for the flat ring
+    // Apply a simple stripe effect based on the X or Z coordinate (you can adjust this for a different effect)
+    let stripe_frequency = 10.0;  // Adjust for more/less frequent stripes
+    let stripe_intensity = (fragment.vertex_position.x * stripe_frequency).sin() * 0.5 + 0.5;
 
-    // Calculate distance from the center in the X-Y plane (ignore Z)
-    let distance_from_center = (fragment.vertex_position.x.powi(2) + fragment.vertex_position.z.powi(2)).sqrt();
+    // Combine the base color with the stripe intensity to add the stripe effect
+    let final_ring_color = ring_base_color * stripe_intensity;
 
-    // Check if we are in the ring's radius range
-    if distance_from_center >= ring_inner_radius && distance_from_center <= ring_outer_radius {
-        // Use a sine function to create periodic bands in the ring, giving it a more textured appearance
-        let band_frequency = 15.0;  // Number of bands in the ring
-        let band_intensity = (fragment.vertex_position.x * band_frequency).sin() * 0.5 + 0.5; // Sine wave pattern
-
-        // Smooth interpolation based on distance from the center to create a soft edge for the ring
-        let lerp_factor = (distance_from_center - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);
-
-        // Combine the band intensity and smooth transition to create the final color effect
-        return ring_color * band_intensity * lerp_factor * fragment.intensity;
-    }
-
-    // Return black color for areas outside the ring
-    Color::new(0.0, 0.0, 0.0) * fragment.intensity
+    // Apply fragment intensity and return the color for the ring
+    return final_ring_color * fragment.intensity;
 }
+
+
 
 
 

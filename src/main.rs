@@ -125,7 +125,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
                 7 => fragment_shader_mercury(&fragment, uniforms),
                 8 => fragment_shader_sun(&fragment, uniforms),
                 9 => fragment_shader_moon(&fragment, uniforms),
-                9 => fragment_shader_ring(&fragment, uniforms),
+                10 => fragment_shader_ring(&fragment, uniforms),
                 _ => fragment_shader_neptune(&fragment, uniforms),
             };
             let color = shaded_color.to_hex();
