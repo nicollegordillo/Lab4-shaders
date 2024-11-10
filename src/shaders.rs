@@ -233,7 +233,7 @@ pub fn fragment_shader_mercury(fragment: &Fragment, _uniforms: &Uniforms) -> Col
 
     // Parameters to control the crater pattern
     let crater_size = 0.1;  // Size of the craters
-    let crater_freq = 3.0;  // Frequency of craters (lower means larger, fewer craters)
+    let crater_freq = 1.0;  // Frequency of craters (lower means larger, fewer craters)
     let randomness_factor = 0.6; // Control randomness level of craters
     let noise_scale = 10.0; // Scaling factor for noise
 
