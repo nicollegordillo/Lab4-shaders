@@ -140,16 +140,52 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     t * t * (3.0 - 2.0 * t) // Smooth interpolation
 }
 
-
-
 pub fn fragment_shader_mars(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
-    let mars_color = Color::new(210.0, 80.0, 0.0); // Rusty red-orange color for Mars
-    mars_color * fragment.intensity
+    // Mars base color (rusty red-orange)
+    let mars_color = Color::new(210.0, 80.0, 0.0);
+
+    // Add noise for surface texture: Generate pseudo-random values based on position
+    let noise_factor = (fragment.vertex_position.x * 10.0 + fragment.vertex_position.z * 10.0).sin() * 0.5 + 0.5;
+
+    // Apply surface variation based on noise (rocky surface effect)
+    let variation = Color::new(20.0, 20.0, 20.0) * noise_factor;  // Slight variations in color
+
+    // Combine base color with the variation
+    let final_color = mars_color + variation;
+
+    // Return the final color, modulated by fragment intensity
+    final_color * fragment.intensity
 }
 
 pub fn fragment_shader_venus(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
-    let venus_color = Color::new(255.0, 223.0, 160.0); // Pale yellowish color for Venus
-    venus_color * fragment.intensity
+    // Base color for Venus (pale yellowish)
+    let base_color = Color::new(255.0, 223.0, 160.0); // Light yellowish for Venus
+
+    // Stripe colors: different brown and yellow shades
+    let brown1 = Color::new(150.0, 100.0, 50.0);  // Darker brownish color
+    let brown2 = Color::new(200.0, 160.0, 100.0); // Lighter brown-yellow color
+    let brown3 = Color::new(180.0, 140.0, 80.0);  // Medium brown-yellow color
+
+    // Use sine of position to create stripes across the surface
+    let stripe_factor = (fragment.vertex_position.y * 3.0 + fragment.vertex_position.z * 3.0).sin();
+
+    // Map sine value to a range between 0 and 1 (abs value creates a non-negative, repeating pattern)
+    let adjusted_factor = (stripe_factor.abs() * 0.5 + 0.5);  // Ensures the pattern is always positive
+
+    // Determine which stripe color to use based on the adjusted_factor
+    let stripe_color = if adjusted_factor > 0.95 {
+        brown1
+    } else if adjusted_factor > 0.78 {
+        brown2
+    } else {
+        brown3
+    };
+
+    // Combine the base color with the stripe color
+    let final_color = base_color * 0.6 + stripe_color * 0.4;
+
+    // Return the final color, modulated by fragment intensity
+    final_color * fragment.intensity
 }
 
 pub fn fragment_shader_earth(fragment: &Fragment, uniforms: &Uniforms) -> Color {

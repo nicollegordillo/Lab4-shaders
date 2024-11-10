@@ -100,6 +100,14 @@ impl Color {
         )
     }
 
+    pub fn clamp(&self) -> Color {
+        Color {
+            r: self.r.min(255.0).max(0.0),
+            g: self.g.min(255.0).max(0.0),
+            b: self.b.min(255.0).max(0.0),
+        }
+    }
+
     pub fn blend_hard_light(&self, blend: &Color) -> Color {
         self.blend_overlay(blend)
     }
